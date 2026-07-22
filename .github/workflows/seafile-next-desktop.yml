@@ -181,6 +181,22 @@ jobs:
           Pop-Location
           $breakpadRoot = (Resolve-Path breakpad-gclient/src).Path
           New-Item -ItemType Junction -Path breakpad -Target $breakpadRoot | Out-Null
+          $breakpadProjects = @(
+            'breakpad/src/client/windows/common.vcxproj',
+            'breakpad/src/client/windows/crash_generation/crash_generation_client.vcxproj',
+            'breakpad/src/client/windows/handler/exception_handler.vcxproj'
+          )
+          foreach ($project in $breakpadProjects) {
+            $content = Get-Content $project -Raw
+            $updated = $content.Replace(
+              '<RuntimeLibrary>MultiThreaded</RuntimeLibrary>',
+              '<RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>'
+            )
+            if ($updated -eq $content) {
+              throw "Release runtime setting was not found in $project"
+            }
+            Set-Content -Path $project -Value $updated
+          }
 
       - name: Set up MSBuild
         uses: microsoft/setup-msbuild@v2
@@ -206,6 +222,12 @@ jobs:
         shell: pwsh
         run: |
           & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" integrate install
+
+      - name: Cache vcpkg binary archives
+        uses: actions/cache@v4
+        with:
+          path: ~/AppData/Local/vcpkg/archives
+          key: vcpkg-windows-${{ hashFiles('libsearpc/vcpkg.json', 'seafile/vcpkg.json', 'seafile-client/vcpkg.json') }}
 
       - name: Build Breakpad
         shell: pwsh

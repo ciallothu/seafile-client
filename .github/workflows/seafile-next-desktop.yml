@@ -40,7 +40,7 @@ jobs:
         uses: jurplel/install-qt-action@v4
         with:
           version: '6.8.3'
-          modules: 'qt5compat qtwebengine qtwebchannel qtpositioning'
+          modules: 'qt5compat qtwebengine qtwebchannel qtpositioning qtserialport'
           cache: true
 
       - name: Install native dependencies
@@ -102,6 +102,7 @@ jobs:
             -x "$app/Contents/Resources/seaf-daemon" \
             -d "$app/Contents/Frameworks" \
             -p '@executable_path/../Frameworks/'
+          test -f "$app/Contents/Frameworks/QtSerialPort.framework/Versions/A/QtSerialPort"
 
           bad_paths=0
           while IFS= read -r -d '' binary; do
@@ -206,7 +207,7 @@ jobs:
         with:
           version: '6.8.3'
           arch: 'win64_msvc2022_64'
-          modules: 'qt5compat qtwebengine qtwebchannel qtpositioning'
+          modules: 'qt5compat qtwebengine qtwebchannel qtpositioning qtserialport'
           cache: true
 
       - name: Install standalone Qt MSBuild support
@@ -281,6 +282,7 @@ jobs:
           Copy-Item seafile-client/x64/Release/seafile-applet.exe dist/windows/
           Copy-Item seafile/x64/Release/seaf-daemon.exe dist/windows/
           Copy-Item libsearpc/x64/Release/libsearpc.dll dist/windows/
+          Copy-Item seafile-client/third_party/WinSparkle-0.5.3/x64/Release/WinSparkle.dll dist/windows/
           Copy-Item seafile/x64/Release/*.dll dist/windows/ -ErrorAction SilentlyContinue
           @('seafile-client/vcpkg_installed', 'seafile/vcpkg_installed', 'libsearpc/vcpkg_installed') | ForEach-Object {
             Get-ChildItem -Path $_ -Recurse -Filter *.dll -ErrorAction SilentlyContinue |
@@ -289,6 +291,10 @@ jobs:
           }
           & "$env:QT_ROOT_DIR\bin\windeployqt.exe" --release --compiler-runtime dist/windows/seafile-applet.exe
           if ($LASTEXITCODE -ne 0) { throw 'Qt deployment failed' }
+
+          if (-not (Test-Path 'dist/windows/Qt6SerialPort.dll')) {
+            Copy-Item "$env:QT_ROOT_DIR\bin\Qt6SerialPort.dll" dist/windows/
+          }
 
           if (-not (Test-Path 'dist/windows/vcruntime140.dll') -or
               -not (Test-Path 'dist/windows/msvcp140.dll')) {
@@ -311,7 +317,7 @@ jobs:
             Copy-Item "$($runtimeDir.FullName)\*.dll" dist/windows/ -Force
           }
 
-          @('seafile-applet.exe', 'seaf-daemon.exe', 'libsearpc.dll') | ForEach-Object {
+          @('seafile-applet.exe', 'seaf-daemon.exe', 'libsearpc.dll', 'WinSparkle.dll', 'Qt6SerialPort.dll') | ForEach-Object {
             if (-not (Test-Path "dist/windows/$_")) { throw "Missing packaged runtime file: $_" }
           }
           @('vcruntime140.dll', 'msvcp140.dll') | ForEach-Object {

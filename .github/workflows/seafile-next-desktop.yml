@@ -13,6 +13,7 @@ permissions:
 
 jobs:
   macos:
+    if: ${{ !contains(github.event.head_commit.message, '[windows-only]') }}
     runs-on: macos-14
     timeout-minutes: 120
     steps:
@@ -46,6 +47,7 @@ jobs:
         run: >-
           brew install autoconf automake libtool pkg-config gettext vala
           glib jansson libevent libwebsockets openssl@3 sqlite zlib argon2
+          dylibbundler
 
       - name: Build libsearpc and sync core
         shell: bash
@@ -94,10 +96,30 @@ jobs:
             -DBUILD_SHIBBOLETH_SUPPORT=ON \
             -DBUILD_SPARKLE_SUPPORT=OFF
           cmake --build "$GITHUB_WORKSPACE/build-macos" --config Release --target seafile-applet --parallel
-          "$QT_ROOT_DIR/bin/macdeployqt" "$GITHUB_WORKSPACE/build-macos/Release/seafile-applet.app"
+          app="$GITHUB_WORKSPACE/build-macos/Release/seafile-applet.app"
+          "$QT_ROOT_DIR/bin/macdeployqt" "$app"
+          dylibbundler -b -of -cd \
+            -x "$app/Contents/Resources/seaf-daemon" \
+            -d "$app/Contents/Frameworks" \
+            -p '@executable_path/../Frameworks/'
+
+          bad_paths=0
+          while IFS= read -r -d '' binary; do
+            if file -b "$binary" | grep -q 'Mach-O'; then
+              if otool -L "$binary" | tail -n +2 | awk '{print $1}' | \
+                  grep -Eq '^(/opt/homebrew/|/usr/local/|/Users/runner/)'; then
+                echo "Unbundled dependency in $binary" >&2
+                bad_paths=1
+              fi
+            fi
+          done < <(find "$app" -type f -print0)
+          [[ "$bad_paths" -eq 0 ]]
+
+          codesign --force --deep --sign - "$app"
+          codesign --verify --deep --strict "$app"
           mkdir -p "$GITHUB_WORKSPACE/dist"
           ditto -c -k --sequesterRsrc --keepParent \
-            "$GITHUB_WORKSPACE/build-macos/Release/seafile-applet.app" \
+            "$app" \
             "$GITHUB_WORKSPACE/dist/seafile-next-9.0.20-macos-arm64-unsigned.zip"
 
       - name: Upload macOS artifact
@@ -108,6 +130,7 @@ jobs:
           if-no-files-found: error
 
   windows:
+    if: ${{ !contains(github.event.head_commit.message, '[macos-only]') }}
     runs-on: windows-2025
     timeout-minutes: 180
     steps:

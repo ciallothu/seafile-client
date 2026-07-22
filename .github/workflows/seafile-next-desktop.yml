@@ -224,12 +224,12 @@ jobs:
           & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" integrate install
 
       - name: Cache vcpkg binary archives
-        uses: actions/cache@v4
+        id: vcpkg-cache
+        uses: actions/cache/restore@v4
         with:
           path: ~/AppData/Local/vcpkg/archives
           key: vcpkg-windows-${{ hashFiles('libsearpc/vcpkg.json', 'seafile/vcpkg.json', 'seafile-client/vcpkg.json', 'seafile-client/third_party/quazip/vcpkg.json') }}
           restore-keys: vcpkg-windows-
-          save-always: true
 
       - name: Build Breakpad
         shell: pwsh
@@ -246,7 +246,16 @@ jobs:
         shell: pwsh
         run: |
           msbuild libsearpc/libsearpc.sln /m /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143 /p:VcpkgEnableManifest=true
+          if ($LASTEXITCODE -ne 0) { throw 'libsearpc build failed' }
           msbuild seafile/seafile.sln /m /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143 /p:VcpkgEnableManifest=true
+          if ($LASTEXITCODE -ne 0) { throw 'sync core build failed' }
+
+      - name: Save vcpkg binary archives
+        if: ${{ always() && steps.vcpkg-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: ~/AppData/Local/vcpkg/archives
+          key: vcpkg-windows-${{ hashFiles('libsearpc/vcpkg.json', 'seafile/vcpkg.json', 'seafile-client/vcpkg.json', 'seafile-client/third_party/quazip/vcpkg.json') }}
 
       - name: Build GUI
         shell: pwsh
@@ -261,7 +270,9 @@ jobs:
             '/p:VcpkgEnableManifest=true'
           )
           msbuild seafile-client/third_party/quazip/quazip.sln @properties
+          if ($LASTEXITCODE -ne 0) { throw 'QuaZip build failed' }
           msbuild seafile-client/seafile-client.sln @properties
+          if ($LASTEXITCODE -ne 0) { throw 'GUI build failed' }
 
       - name: Assemble unsigned portable package
         shell: pwsh
@@ -271,9 +282,16 @@ jobs:
           Copy-Item seafile/x64/Release/seaf-daemon.exe dist/windows/
           Copy-Item libsearpc/x64/Release/libsearpc.dll dist/windows/
           Copy-Item seafile/x64/Release/*.dll dist/windows/ -ErrorAction SilentlyContinue
-          Get-ChildItem -Path seafile-client/vcpkg_installed -Recurse -Filter *.dll | Copy-Item -Destination dist/windows -Force
-          Get-ChildItem -Path seafile/vcpkg_installed -Recurse -Filter *.dll | Copy-Item -Destination dist/windows -Force
-          & "$env:QT_ROOT_DIR\bin\windeployqt.exe" --release --no-compiler-runtime dist/windows/seafile-applet.exe
+          @('seafile-client/vcpkg_installed', 'seafile/vcpkg_installed', 'libsearpc/vcpkg_installed') | ForEach-Object {
+            Get-ChildItem -Path $_ -Recurse -Filter *.dll -ErrorAction SilentlyContinue |
+              Where-Object { $_.FullName -notmatch '[\\/]debug[\\/]' } |
+              Copy-Item -Destination dist/windows -Force
+          }
+          & "$env:QT_ROOT_DIR\bin\windeployqt.exe" --release dist/windows/seafile-applet.exe
+          if ($LASTEXITCODE -ne 0) { throw 'Qt deployment failed' }
+          @('seafile-applet.exe', 'seaf-daemon.exe', 'libsearpc.dll') | ForEach-Object {
+            if (-not (Test-Path "dist/windows/$_")) { throw "Missing packaged runtime file: $_" }
+          }
           Compress-Archive -Path dist/windows/* -DestinationPath dist/seafile-next-9.0.20-windows-x64-unsigned.zip
 
       - name: Upload Windows artifact

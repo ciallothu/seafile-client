@@ -287,10 +287,35 @@ jobs:
               Where-Object { $_.FullName -notmatch '[\\/]debug[\\/]' } |
               Copy-Item -Destination dist/windows -Force
           }
-          & "$env:QT_ROOT_DIR\bin\windeployqt.exe" --release dist/windows/seafile-applet.exe
+          & "$env:QT_ROOT_DIR\bin\windeployqt.exe" --release --compiler-runtime dist/windows/seafile-applet.exe
           if ($LASTEXITCODE -ne 0) { throw 'Qt deployment failed' }
+
+          if (-not (Test-Path 'dist/windows/vcruntime140.dll') -or
+              -not (Test-Path 'dist/windows/msvcp140.dll')) {
+            $redistRoots = @()
+            if ($env:VCToolsRedistDir) {
+              $redistRoots += $env:VCToolsRedistDir
+            }
+            $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+            if (Test-Path $vswhere) {
+              $vsInstall = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Redist.14.Latest -property installationPath
+              if ($vsInstall) {
+                $redistRoots += "$vsInstall\VC\Redist\MSVC"
+              }
+            }
+            $runtimeDir = Get-ChildItem -Path $redistRoots -Directory -Recurse -ErrorAction SilentlyContinue |
+              Where-Object { $_.FullName -match '[\\/]x64[\\/]Microsoft\.VC[0-9]+\.CRT$' } |
+              Sort-Object FullName -Descending |
+              Select-Object -First 1
+            if (-not $runtimeDir) { throw 'Unable to locate the x64 MSVC runtime' }
+            Copy-Item "$($runtimeDir.FullName)\*.dll" dist/windows/ -Force
+          }
+
           @('seafile-applet.exe', 'seaf-daemon.exe', 'libsearpc.dll') | ForEach-Object {
             if (-not (Test-Path "dist/windows/$_")) { throw "Missing packaged runtime file: $_" }
+          }
+          @('vcruntime140.dll', 'msvcp140.dll') | ForEach-Object {
+            if (-not (Test-Path "dist/windows/$_")) { throw "Missing compiler runtime file: $_" }
           }
           Compress-Archive -Path dist/windows/* -DestinationPath dist/seafile-next-9.0.20-windows-x64-unsigned.zip
 

@@ -10,8 +10,9 @@ public:
 private slots:
     void testReadableFileSize();
     void testIncludeUrlParams();
+    void testServerBaseUrlFromApiUrl();
+    void testUrlPathWithQueryAndFragment();
     void testDigitalCompare();
 };
 
 #endif // TESTS_UTILS_H
-

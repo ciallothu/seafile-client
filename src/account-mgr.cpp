@@ -547,10 +547,8 @@ void AccountManager::serverInfoSuccess(const ServerInfo &info)
     if (!changed)
         return;
 
-    QUrl url(account.serverUrl);
-    url.setPath("/");
     seafApplet->rpcClient()->setServerProperty(
-        url.toString(), "is_pro", account.isPro() ? "true" : "false");
+        account.serverUrl.toString(), "is_pro", account.isPro() ? "true" : "false");
 
     for (size_t i = 0; i < accounts_.size(); i++) {
         if (accounts_[i] == account) {
@@ -602,9 +600,7 @@ void AccountManager::clearAccountToken(const Account& account)
 void AccountManager::clearSyncToken(const Account& account)
 {
     QString error;
-    QUrl url = account.serverUrl;
-    url.setPath("/");
-    if (seafApplet->rpcClient()->removeSyncTokensByAccount(url,
+    if (seafApplet->rpcClient()->removeSyncTokensByAccount(account.serverUrl,
                                                            account.username,
                                                            &error)  < 0) {
         seafApplet->warningBox(

@@ -31,10 +31,7 @@ void AutoLoginService::startAutoLogin(const QString& next_url)
         return;
     }
 
-    absolute_url.setScheme("");
-    absolute_url.setHost("");
-    absolute_url.setPort(-1);
-    QString next = absolute_url.toString().mid(2);
+    QString next = urlPathWithQueryAndFragment(absolute_url);
     GetLoginTokenRequest *req = new GetLoginTokenRequest(account, next);
 
     connect(req, SIGNAL(success(const QString&)),

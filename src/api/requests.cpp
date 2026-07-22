@@ -174,8 +174,7 @@ RepoDownloadInfo RepoDownloadInfo::fromDict(QMap<QString, QVariant>& dict,
     info.enc_version = dict.value("enc_version", 1).toInt();
     info.readonly = read_only;
 
-    QUrl url = url_in;
-    url.setPath("/");
+    QUrl url = serverBaseUrlFromApiUrl(url_in);
 
     QString salt = dict.value("salt").toString();
     QMap<QString, QVariant> map;

@@ -70,6 +70,14 @@ QString md5(const QString& s);
 
 QUrl urlJoin(const QUrl& url, const QString& tail);
 
+// Return the public Seafile web base URL from one of its API URLs while
+// preserving a non-root deployment path such as /seafile.
+QUrl serverBaseUrlFromApiUrl(const QUrl& url);
+
+// Return an absolute URL's path, query and fragment. This is suitable for the
+// Seahub client-login "next" parameter and does not drop SITE_ROOT.
+QString urlPathWithQueryAndFragment(const QUrl& url);
+
 void removeDirRecursively(const QString &path);
 
 QString dumpHexPresentation(const QByteArray &bytes);

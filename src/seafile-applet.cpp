@@ -677,8 +677,10 @@ bool SeafileApplet::deletingConfirmationBox(const QString& text, const QString& 
 }
 
 /**
- * For each repo, add the "server-url" property (inferred from account url),
- * which would be used for http sync.
+ * Keep each repo's "server-url" property aligned with its account's complete
+ * public web URL. Older clients stored only the origin and silently discarded
+ * SITE_ROOT, which forced seafhttp and notification requests to domain-root
+ * paths.
  */
 void SeafileApplet::updateReposPropertyForHttpSync()
 {
@@ -689,30 +691,22 @@ void SeafileApplet::updateReposPropertyForHttpSync()
         return;
     }
 
-    const std::vector<Account>& accounts = account_mgr_->accounts();
     for (size_t i = 0; i < repos.size(); i++) {
         const LocalRepo& repo = repos[i];
         QString repo_server_url;
-        QString server_url;
         if (rpc_client_->getRepoProperty(repo.id, kRepoServerUrlProperty, &repo_server_url) < 0) {
             continue;
         }
-        if (!repo_server_url.isEmpty()) {
-            continue;
-        }
-        if (rpc_client_->getRepoProperty(repo.id, kRepoServerUrlProperty, &server_url) < 0) {
+
+        const Account account = account_mgr_->getAccountByRepo(repo.id, rpc_client_);
+        if (!account.isValid()) {
             continue;
         }
 
-        QString server_host = QUrl(server_url).host();
-        for (size_t i = 0; i < accounts.size(); i++) {
-            const Account& account = accounts[i];
-            if (account.serverUrl.host() == server_host) {
-                QUrl url(account.serverUrl);
-                url.setPath("/");
-                rpc_client_->setRepoProperty(repo.id, kRepoServerUrlProperty, url.toString());
-                break;
-            }
+        const QString account_server_url = account.serverUrl.toString(QUrl::FullyEncoded);
+        if (QUrl(repo_server_url) != QUrl(account_server_url)) {
+            rpc_client_->setRepoProperty(repo.id, kRepoServerUrlProperty,
+                                         account_server_url);
         }
     }
 }

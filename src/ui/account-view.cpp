@@ -108,9 +108,7 @@ void AccountView::deleteAccount()
     if (seafApplet->yesOrNoBox(question, this, false)) {
         FileBrowserManager::getInstance()->closeAllDialogByAccount(account);
         QString error;
-        QUrl server_url = account.serverUrl;
-        server_url.setPath("/");
-        if (seafApplet->rpcClient()->unsyncReposByAccount(server_url,
+        if (seafApplet->rpcClient()->unsyncReposByAccount(account.serverUrl,
                                                           account.username,
                                                           &error) < 0) {
 

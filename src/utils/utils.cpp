@@ -648,6 +648,40 @@ QUrl urlJoin(const QUrl& head, const QString& tail)
     return QUrl(a + b);
 }
 
+QUrl serverBaseUrlFromApiUrl(const QUrl& api_url)
+{
+    QUrl base_url(api_url);
+    QString path = base_url.path();
+    int api_pos = path.indexOf("/api2/");
+    if (api_pos < 0) {
+        api_pos = path.indexOf("/api/");
+    }
+
+    if (api_pos >= 0) {
+        path.truncate(api_pos);
+    }
+    if (path.isEmpty()) {
+        path = "/";
+    }
+
+    base_url.setPath(path);
+    base_url.setQuery(QString());
+    base_url.setFragment(QString());
+    return base_url;
+}
+
+QString urlPathWithQueryAndFragment(const QUrl& url)
+{
+    QString path = url.path();
+    if (url.hasQuery()) {
+        path += "?" + url.query();
+    }
+    if (!url.fragment().isEmpty()) {
+        path += "#" + url.fragment();
+    }
+    return path;
+}
+
 void removeDirRecursively(const QString &path)
 {
     QFileInfo file_info(path);

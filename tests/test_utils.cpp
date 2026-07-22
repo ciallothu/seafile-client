@@ -52,6 +52,21 @@ void Utils::testIncludeUrlParams() {
     }
 }
 
+void Utils::testServerBaseUrlFromApiUrl() {
+    QCOMPARE(::serverBaseUrlFromApiUrl(
+                 QUrl("https://cloud.example/seafile/api2/repos/id/download-info/?x=1#part")),
+             QUrl("https://cloud.example/seafile"));
+    QCOMPARE(::serverBaseUrlFromApiUrl(
+                 QUrl("https://cloud.example/api2/repos/id/download-info/")),
+             QUrl("https://cloud.example/"));
+}
+
+void Utils::testUrlPathWithQueryAndFragment() {
+    QCOMPARE(::urlPathWithQueryAndFragment(
+                 QUrl("https://cloud.example/seafile/library/id/name/?p=1#details")),
+             QString("/seafile/library/id/name/?p=1#details"));
+}
+
 void Utils::testDigitalCompare() {
     QList<QString> list;
     list << "05 copy 2.ico" << "05 copy 3.ico"

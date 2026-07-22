@@ -191,6 +191,9 @@ jobs:
           msbuild breakpad/src/client/windows/common.vcxproj @properties
           msbuild breakpad/src/client/windows/crash_generation/crash_generation_client.vcxproj @properties
           msbuild breakpad/src/client/windows/handler/exception_handler.vcxproj @properties
+          $libraryDir = 'breakpad/src/client/windows/Release/lib'
+          Copy-Item breakpad/src/client/windows/crash_generation/Release/lib/crash_generation_client.lib $libraryDir
+          Copy-Item breakpad/src/client/windows/handler/Release/lib/exception_handler.lib $libraryDir
 
       - name: Build libsearpc and sync core
         shell: pwsh

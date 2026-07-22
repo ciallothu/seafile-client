@@ -227,7 +227,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/AppData/Local/vcpkg/archives
-          key: vcpkg-windows-${{ hashFiles('libsearpc/vcpkg.json', 'seafile/vcpkg.json', 'seafile-client/vcpkg.json') }}
+          key: vcpkg-windows-${{ hashFiles('libsearpc/vcpkg.json', 'seafile/vcpkg.json', 'seafile-client/vcpkg.json', 'seafile-client/third_party/quazip/vcpkg.json') }}
+          restore-keys: vcpkg-windows-
+          save-always: true
 
       - name: Build Breakpad
         shell: pwsh
@@ -249,7 +251,17 @@ jobs:
       - name: Build GUI
         shell: pwsh
         run: |
-          msbuild seafile-client/seafile-client.sln /m /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143 /p:QtMsBuild="$env:QT_MSBUILD" /p:QtInstall="$env:QT_ROOT_DIR" /p:VcpkgEnableManifest=true
+          $properties = @(
+            '/m',
+            '/p:Configuration=Release',
+            '/p:Platform=x64',
+            '/p:PlatformToolset=v143',
+            "/p:QtMsBuild=$env:QT_MSBUILD",
+            "/p:QtInstall=$env:QT_ROOT_DIR",
+            '/p:VcpkgEnableManifest=true'
+          )
+          msbuild seafile-client/third_party/quazip/quazip.sln @properties
+          msbuild seafile-client/seafile-client.sln @properties
 
       - name: Assemble unsigned portable package
         shell: pwsh

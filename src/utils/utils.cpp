@@ -682,6 +682,16 @@ QString urlPathWithQueryAndFragment(const QUrl& url)
     return path;
 }
 
+QUrl urlFromSameOriginPath(const QUrl& server_url, const QString& path)
+{
+    const QUrl path_url(path);
+    QUrl result(server_url);
+    result.setPath(path_url.path());
+    result.setQuery(path_url.query());
+    result.setFragment(path_url.fragment());
+    return result;
+}
+
 void removeDirRecursively(const QString &path)
 {
     QFileInfo file_info(path);

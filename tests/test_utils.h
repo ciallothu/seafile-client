@@ -12,6 +12,7 @@ private slots:
     void testIncludeUrlParams();
     void testServerBaseUrlFromApiUrl();
     void testUrlPathWithQueryAndFragment();
+    void testUrlFromSameOriginPath();
     void testDigitalCompare();
 };
 

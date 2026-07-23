@@ -64,8 +64,10 @@ void AutoLoginService::onGetLoginTokenFailed(const ApiError& error)
 {
     GetLoginTokenRequest *req = (GetLoginTokenRequest *)(sender());
     qWarning("get login token failed: %s\n", error.toString().toUtf8().data());
-    // server doesn't support client directly login, or other errors happened.
-    // We open the server url directly in this case;
-    openUrl(req->account().getAbsoluteUrl(req->nextUrl()));
+    // Two-factor enabled servers intentionally return an empty token response,
+    // and older servers may not support direct login. nextUrl() already
+    // contains SITE_ROOT, so appending it to account.serverUrl would duplicate
+    // a non-root deployment prefix.
+    openUrl(urlFromSameOriginPath(req->account().serverUrl, req->nextUrl()));
     req->deleteLater();
 }

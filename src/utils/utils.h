@@ -78,6 +78,11 @@ QUrl serverBaseUrlFromApiUrl(const QUrl& url);
 // Seahub client-login "next" parameter and does not drop SITE_ROOT.
 QString urlPathWithQueryAndFragment(const QUrl& url);
 
+// Build a URL on server_url's origin from a path that already contains the
+// public deployment prefix. Unlike urlJoin(), this replaces rather than
+// appends to server_url's path.
+QUrl urlFromSameOriginPath(const QUrl& server_url, const QString& path);
+
 void removeDirRecursively(const QString &path);
 
 QString dumpHexPresentation(const QByteArray &bytes);

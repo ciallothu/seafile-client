@@ -67,6 +67,23 @@ void Utils::testUrlPathWithQueryAndFragment() {
              QString("/seafile/library/id/name/?p=1#details"));
 }
 
+void Utils::testUrlFromSameOriginPath() {
+    const QUrl target(
+        "https://cloud.example/seafile/library/id/name/?p=1#details");
+    const QString next = ::urlPathWithQueryAndFragment(target);
+
+    QCOMPARE(::urlFromSameOriginPath(
+                 QUrl("https://cloud.example/seafile"), next),
+             target);
+    QCOMPARE(::urlFromSameOriginPath(
+                 QUrl("https://cloud.example"), "/library/id/name/"),
+             QUrl("https://cloud.example/library/id/name/"));
+    QCOMPARE(::urlFromSameOriginPath(
+                 QUrl("https://cloud.example/seafile"),
+                 "//other.example/library/id/"),
+             QUrl("https://cloud.example/library/id/"));
+}
+
 void Utils::testDigitalCompare() {
     QList<QString> list;
     list << "05 copy 2.ico" << "05 copy 3.ico"

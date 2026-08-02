@@ -112,29 +112,17 @@ bool isOSXLionOrGreater()
 namespace utils {
 namespace mac {
 
-// another solution: hide dock icon when mainwindows is closed and show when
-// mainwindows is shown
-// http://stackoverflow.com/questions/16994331/multiprocessing-qt-app-how-can-i-limit-it-to-a-single-icon-in-the-macos-x-dock
 void setDockIconStyle(bool hidden) {
-    ProcessSerialNumber psn = { 0, kCurrentProcess };
-    OSStatus err;
-    if (hidden) {
-        // kProcessTransformToBackgroundApplication is not support on OSX 10.7 and before
-        // kProcessTransformToUIElementApplication is used for better fit when possible
-        unsigned major;
-        unsigned minor;
-        unsigned patch;
-        getSystemVersion(&major, &minor, &patch);
-        if (major == 10 && minor == 7)
-            err = TransformProcessType(&psn, kProcessTransformToBackgroundApplication);
-        else
-            err = TransformProcessType(&psn, kProcessTransformToUIElementApplication);
-    } else {
-        // kProcessTransformToForegroundApplication is supported on OSX 10.6 or later
-        err = TransformProcessType(&psn, kProcessTransformToForegroundApplication);
+    // Accessory applications can still own and activate windows, but do not
+    // have a Dock tile. This is the AppKit equivalent of an LSUIElement app
+    // and, unlike the deprecated Process Manager transformation API, can be
+    // applied reliably after the application has been activated again.
+    const NSApplicationActivationPolicy policy =
+        hidden ? NSApplicationActivationPolicyAccessory
+               : NSApplicationActivationPolicyRegular;
+    if (![[NSApplication sharedApplication] setActivationPolicy:policy]) {
+        qWarning("setDockIconStyle %s failure\n", hidden ? "hidden" : "show");
     }
-    if (err != noErr)
-        qWarning("setDockIconStyle %s failure, status code: %d\n", (hidden ? "hidden" : "show"), err);
 }
 
 void orderFrontRegardless(unsigned long long win_id, bool force) {

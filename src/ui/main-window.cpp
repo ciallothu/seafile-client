@@ -16,6 +16,7 @@
 #include "utils/utils.h"
 #include "seafile-applet.h"
 #include "configurator.h"
+#include "settings-mgr.h"
 #include "tray-icon.h"
 #include "login-dialog.h"
 #include "utils/utils.h"
@@ -113,6 +114,16 @@ void MainWindow::closeEvent(QCloseEvent *event)
 {
     event->accept();
     hide();
+
+#if defined(Q_OS_MAC)
+    // Activating a UIElement application to show this window can make macOS
+    // restore its Dock tile. Re-apply the persisted preference whenever the
+    // user closes the main window, instead of relying on the one-time update
+    // performed when the setting (or the application) is initialized.
+    if (seafApplet->settingsManager()->hideDockIcon()) {
+        set_seafile_dock_icon_style(true);
+    }
+#endif
 }
 
 bool MainWindow::event(QEvent *ev)

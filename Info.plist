@@ -5,7 +5,7 @@
 	<key>CFBundleExecutable</key>
 	<string>seafile-applet</string>
 	<key>CFBundleGetInfoString</key>
-	<string>Seafile Client Application</string>
+	<string>seafile-next Desktop Client</string>
 	<key>CFBundleIconFile</key>
 	<string>seafile</string>
 	<key>CFBundleIdentifier</key>
@@ -13,7 +13,9 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleName</key>
-	<string>Seafile</string>
+	<string>seafile-next</string>
+	<key>CFBundleDisplayName</key>
+	<string>seafile-next</string>
 	<key>CFBundleShortVersionString</key>
 	<string>9.0.20</string>
 	<key>CFBundleVersion</key>

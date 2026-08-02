@@ -1,4 +1,4 @@
-name: Seafile Next desktop builds
+name: seafile-next desktop builds
 
 on:
   workflow_dispatch:
@@ -116,17 +116,28 @@ jobs:
           done < <(find "$app" -type f -print0)
           [[ "$bad_paths" -eq 0 ]]
 
+          mkdir -p "$GITHUB_WORKSPACE/dist"
+          packaged_app="$GITHUB_WORKSPACE/dist/seafile-next.app"
+          mv "$app" "$packaged_app"
+          app="$packaged_app"
+
           codesign --force --deep --sign - "$app"
           codesign --verify --deep --strict "$app"
-          mkdir -p "$GITHUB_WORKSPACE/dist"
+          test -f "$app/Contents/MacOS/seafile-applet"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleName' "$app/Contents/Info.plist")" = 'seafile-next'
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleDisplayName' "$app/Contents/Info.plist")" = 'seafile-next'
+          package_version='9.0.20'
+          if [[ "$GITHUB_REF_TYPE" == 'tag' ]]; then
+            package_version="${GITHUB_REF_NAME#v}"
+          fi
           ditto -c -k --sequesterRsrc --keepParent \
             "$app" \
-            "$GITHUB_WORKSPACE/dist/seafile-next-9.0.20-macos-arm64-unsigned.zip"
+            "$GITHUB_WORKSPACE/dist/seafile-next-${package_version}-macos-arm64-unsigned.zip"
 
-      - name: Upload macOS artifact
+      - name: Upload seafile-next macOS artifact
         uses: actions/upload-artifact@v4
         with:
-          name: seafile-client-macos
+          name: seafile-next-macos-arm64
           path: dist/*.zip
           if-no-files-found: error
 
@@ -323,11 +334,21 @@ jobs:
           @('vcruntime140.dll', 'msvcp140.dll') | ForEach-Object {
             if (-not (Test-Path "dist/windows/$_")) { throw "Missing compiler runtime file: $_" }
           }
-          Compress-Archive -Path dist/windows/* -DestinationPath dist/seafile-next-9.0.20-windows-x64-unsigned.zip
+          $productInfo = [Diagnostics.FileVersionInfo]::GetVersionInfo(
+            (Resolve-Path 'dist/windows/seafile-applet.exe').Path
+          )
+          if ($productInfo.ProductName -ne 'seafile-next') {
+            throw "Unexpected Windows product name: $($productInfo.ProductName)"
+          }
+          $packageVersion = '9.0.20'
+          if ($env:GITHUB_REF_TYPE -eq 'tag') {
+            $packageVersion = $env:GITHUB_REF_NAME -replace '^v', ''
+          }
+          Compress-Archive -Path dist/windows/* -DestinationPath "dist/seafile-next-$packageVersion-windows-x64-unsigned.zip"
 
-      - name: Upload Windows artifact
+      - name: Upload seafile-next Windows artifact
         uses: actions/upload-artifact@v4
         with:
-          name: seafile-client-windows
+          name: seafile-next-windows-x64
           path: dist/*.zip
           if-no-files-found: error

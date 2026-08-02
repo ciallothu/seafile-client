@@ -245,8 +245,8 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: ~/AppData/Local/vcpkg/archives
-          key: vcpkg-windows-${{ hashFiles('libsearpc/vcpkg.json', 'seafile/vcpkg.json', 'seafile-client/vcpkg.json', 'seafile-client/third_party/quazip/vcpkg.json') }}
-          restore-keys: vcpkg-windows-
+          key: vcpkg-windows-v2-${{ hashFiles('libsearpc/vcpkg.json', 'seafile/vcpkg.json', 'seafile-client/vcpkg.json', 'seafile-client/third_party/quazip/vcpkg.json') }}
+          restore-keys: vcpkg-windows-v2-
 
       - name: Build Breakpad
         shell: pwsh
@@ -267,13 +267,6 @@ jobs:
           msbuild seafile/seafile.sln /m /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143 /p:VcpkgEnableManifest=true
           if ($LASTEXITCODE -ne 0) { throw 'sync core build failed' }
 
-      - name: Save vcpkg binary archives
-        if: ${{ always() && steps.vcpkg-cache.outputs.cache-hit != 'true' }}
-        uses: actions/cache/save@v6
-        with:
-          path: ~/AppData/Local/vcpkg/archives
-          key: vcpkg-windows-${{ hashFiles('libsearpc/vcpkg.json', 'seafile/vcpkg.json', 'seafile-client/vcpkg.json', 'seafile-client/third_party/quazip/vcpkg.json') }}
-
       - name: Build GUI
         shell: pwsh
         run: |
@@ -290,6 +283,13 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'QuaZip build failed' }
           msbuild seafile-client/seafile-client.sln @properties
           if ($LASTEXITCODE -ne 0) { throw 'GUI build failed' }
+
+      - name: Save vcpkg binary archives
+        if: ${{ success() && steps.vcpkg-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v6
+        with:
+          path: ~/AppData/Local/vcpkg/archives
+          key: vcpkg-windows-v2-${{ hashFiles('libsearpc/vcpkg.json', 'seafile/vcpkg.json', 'seafile-client/vcpkg.json', 'seafile-client/third_party/quazip/vcpkg.json') }}
 
       - name: Assemble unsigned portable package
         shell: pwsh

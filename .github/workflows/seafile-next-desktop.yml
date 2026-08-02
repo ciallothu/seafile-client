@@ -18,19 +18,19 @@ jobs:
     timeout-minutes: 120
     steps:
       - name: Checkout GUI
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           path: seafile-client
 
       - name: Checkout patched sync core
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: ${{ github.repository_owner }}/seafile
           ref: 09d870896c36e6b09cb4c809c61afa817ca1c83b
           path: seafile
 
       - name: Checkout libsearpc
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: haiwen/libsearpc
           ref: v3.3-latest
@@ -135,7 +135,7 @@ jobs:
             "$GITHUB_WORKSPACE/dist/seafile-next-${package_version}-macos-arm64-unsigned.zip"
 
       - name: Upload seafile-next macOS artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: seafile-next-macos-arm64
           path: dist/*.zip
@@ -147,26 +147,26 @@ jobs:
     timeout-minutes: 180
     steps:
       - name: Checkout GUI
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           path: seafile-client
 
       - name: Checkout patched sync core
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: ${{ github.repository_owner }}/seafile
           ref: 09d870896c36e6b09cb4c809c61afa817ca1c83b
           path: seafile
 
       - name: Checkout libsearpc
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: haiwen/libsearpc
           ref: v3.3-latest
           path: libsearpc
 
       - name: Checkout Breakpad
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: google/breakpad
           ref: 4febb34583d421e06b8007891d41c6980e29a684
@@ -211,7 +211,7 @@ jobs:
           }
 
       - name: Set up MSBuild
-        uses: microsoft/setup-msbuild@v2
+        uses: microsoft/setup-msbuild@v3
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
@@ -237,7 +237,7 @@ jobs:
 
       - name: Cache vcpkg binary archives
         id: vcpkg-cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: ~/AppData/Local/vcpkg/archives
           key: vcpkg-windows-${{ hashFiles('libsearpc/vcpkg.json', 'seafile/vcpkg.json', 'seafile-client/vcpkg.json', 'seafile-client/third_party/quazip/vcpkg.json') }}
@@ -264,7 +264,7 @@ jobs:
 
       - name: Save vcpkg binary archives
         if: ${{ always() && steps.vcpkg-cache.outputs.cache-hit != 'true' }}
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: ~/AppData/Local/vcpkg/archives
           key: vcpkg-windows-${{ hashFiles('libsearpc/vcpkg.json', 'seafile/vcpkg.json', 'seafile-client/vcpkg.json', 'seafile-client/third_party/quazip/vcpkg.json') }}
@@ -347,7 +347,7 @@ jobs:
           Compress-Archive -Path dist/windows/* -DestinationPath "dist/seafile-next-$packageVersion-windows-x64-unsigned.zip"
 
       - name: Upload seafile-next Windows artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: seafile-next-windows-x64
           path: dist/*.zip
